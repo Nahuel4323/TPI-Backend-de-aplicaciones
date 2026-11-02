@@ -3,6 +3,17 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Spring Boot-GatewayApplication<gateway>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/msvc-gateway",
+            "mainClass": "ar.edu.utn.frc.gateway.GatewayApplication",
+            "projectName": "gateway",
+            "vmArgs": "-Duser.timezone=UTC",
+            "args": "",
+            "envFile": "${workspaceFolder}/msvc-gateway/.env"
+        },
+        {
+            "type": "java",
             "name": "Spring Boot-BookingsApplication<bookings>",
             "request": "launch",
             "cwd": "${workspaceFolder}/msvc-bookings",

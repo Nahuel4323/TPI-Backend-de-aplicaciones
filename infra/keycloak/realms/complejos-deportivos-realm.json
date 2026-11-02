@@ -2,14 +2,90 @@
   "realm": "complejos-deportivos",
   "enabled": true,
   "displayName": "Complejos Deportivos",
-  "registrationAllowed": false,
+  "registrationAllowed": true,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": false,
   "roles": {
     "realm": [
-      { "name": "CLIENTE", "description": "Cliente de los complejos deportivos" },
-      { "name": "ADMIN", "description": "Administrador de los complejos deportivos" }
+      {
+        "description": "Cliente de los complejos deportivos",
+        "name": "CLIENTE"
+      },
+      {
+        "description": "Administrador de los complejos deportivos",
+        "name": "ADMIN"
+      },
+      {
+        "name": "default-roles-complejos-deportivos",
+        "composites": {
+          "realm": [
+            "CLIENTE",
+            "offline_access",
+            "uma_authorization"
+          ]
+        },
+        "composite": true
+      }
     ]
-  }
+  },
+  "registrationEmailAsUsername": true,
+  "editUsernameAllowed": false,
+  "verifyEmail": false,
+  "passwordPolicy": "length(12) and digits(1) and lowerCase(1) and upperCase(1)",
+  "defaultRole": {
+    "name": "default-roles-complejos-deportivos",
+    "clientRole": false,
+    "composite": true
+  },
+  "clients": [
+    {
+      "protocol": "openid-connect",
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "enabled": true,
+      "fullScopeAllowed": true,
+      "implicitFlowEnabled": false,
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access"
+      ],
+      "webOrigins": [
+        "https://oauth.pstmn.io"
+      ],
+      "publicClient": true,
+      "directAccessGrantsEnabled": false,
+      "protocolMappers": [
+        {
+          "name": "backend-api-audience",
+          "protocol": "openid-connect",
+          "config": {
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "included.custom.audience": "backend-api"
+          },
+          "consentRequired": false,
+          "protocolMapper": "oidc-audience-mapper"
+        }
+      ],
+      "defaultClientScopes": [
+        "basic",
+        "web-origins",
+        "acr",
+        "roles",
+        "profile",
+        "email"
+      ],
+      "standardFlowEnabled": true,
+      "redirectUris": [
+        "https://oauth.pstmn.io/v1/callback",
+        "https://oauth.pstmn.io/v1/browser-callback"
+      ],
+      "name": "Postman local - registro y pruebas",
+      "serviceAccountsEnabled": false,
+      "clientId": "postman-local"
+    }
+  ]
 }

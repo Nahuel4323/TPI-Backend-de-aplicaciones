@@ -22,7 +22,10 @@ usar ese puerto. El modo `start-dev` es para el entorno local.
 
 Se importa el realm `complejos-deportivos`, con roles `CLIENTE` y `ADMIN`.
 El administrador inicial pertenece al realm `master`; no es un usuario de negocio.
-Los clientes OAuth2, usuarios de prueba y la integracion del gateway se definiran despues.
+El autorregistro esta habilitado con correo unico y rol CLIENTE por defecto. El cliente
+publico `postman-local` usa Authorization Code + PKCE S256 y audiencia `backend-api`.
+El gateway valida sus tokens para completar el perfil de cliente. Ver la
+[guia de Registrar cliente](../../docs/registrar-cliente.md).
 La base PostgreSQL de este Compose es exclusiva de Keycloak; no contiene las bases
 de users, spaces ni bookings y no publica su puerto en la computadora.
 
@@ -45,6 +48,10 @@ Se comparten `docker-compose.yml`, `.env.example` y
 Cada integrante tiene su propia base y volumen, y parte del mismo realm inicial.
 La importacion al inicio omite un realm que ya existe; los cambios al JSON no
 actualizan automaticamente las instalaciones anteriores.
+
+Para aplicar la configuracion de registro a un realm existente sin borrar datos,
+usar PowerShell 7 desde la raiz: `pwsh -File infra/keycloak/configurar-registro.ps1`.
+El script usa las credenciales administrativas del `.env` raiz y conserva los usuarios.
 
 Los cambios hechos en la consola solo afectan la instalacion local. Para compartirlos,
 actualizar el JSON inicial y documentar como aplicarlos a los realms existentes.

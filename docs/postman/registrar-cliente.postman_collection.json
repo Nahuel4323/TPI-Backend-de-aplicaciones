@@ -1,0 +1,258 @@
+{
+  "variable": [
+    {
+      "key": "gateway_url",
+      "type": "string",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "access_token",
+      "type": "string",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "bearer": [
+      {
+        "key": "token",
+        "type": "string",
+        "value": "{{access_token}}"
+      }
+    ],
+    "type": "bearer"
+  },
+  "item": [
+    {
+      "request": {
+        "header": [],
+        "method": "GET",
+        "auth": {
+          "type": "noauth"
+        },
+        "url": "http://localhost:8081/actuator/health"
+      },
+      "name": "Health users",
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "request": {
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "POST",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\"nombre\":\"Ana\",\"apellido\":\"Perez\",\"telefono\":\"3511234567\",\"preferenciaContacto\":\"EMAIL\"}",
+          "mode": "raw"
+        },
+        "url": "{{gateway_url}}/api/users/clientes"
+      },
+      "name": "Registrar cliente - cuenta nueva",
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test('HTTP 201', function () { pm.response.to.have.status(201); });",
+              "pm.test('Perfil sin credenciales', function () { const data = pm.response.json(); pm.expect(data).to.have.property('id'); pm.expect(data).not.to.have.property('password'); pm.expect(data).not.to.have.property('keycloakId'); pm.expect(data).not.to.have.property('email'); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "request": {
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "POST",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\"nombre\":\"Ana\",\"apellido\":\"Perez\",\"telefono\":\"3511234567\",\"preferenciaContacto\":\"EMAIL\"}",
+          "mode": "raw"
+        },
+        "url": "{{gateway_url}}/api/users/clientes"
+      },
+      "name": "Registrar cliente - duplicado",
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test('HTTP 409', function () { pm.response.to.have.status(409); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "request": {
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "POST",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\"nombre\":\" \",\"apellido\":\"Perez\"}",
+          "mode": "raw"
+        },
+        "url": "{{gateway_url}}/api/users/clientes"
+      },
+      "name": "Registrar cliente - nombre invalido",
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "request": {
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "POST",
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\"nombre\":\"Ana\",\"apellido\":\"Perez\",\"rol\":\"ADMIN\"}",
+          "mode": "raw"
+        },
+        "url": "{{gateway_url}}/api/users/clientes"
+      },
+      "name": "Registrar cliente - intento de elegir rol",
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test('HTTP 400', function () { pm.response.to.have.status(400); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "request": {
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "POST",
+        "auth": {
+          "type": "noauth"
+        },
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\"nombre\":\"Ana\",\"apellido\":\"Perez\",\"telefono\":\"3511234567\",\"preferenciaContacto\":\"EMAIL\"}",
+          "mode": "raw"
+        },
+        "url": "{{gateway_url}}/api/users/clientes"
+      },
+      "name": "Registrar cliente - sin token",
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test('HTTP 401', function () { pm.response.to.have.status(401); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    },
+    {
+      "request": {
+        "header": [
+          {
+            "value": "application/json",
+            "key": "Content-Type"
+          }
+        ],
+        "method": "POST",
+        "auth": {
+          "type": "noauth"
+        },
+        "body": {
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          },
+          "raw": "{\"nombre\":\"Ana\",\"apellido\":\"Perez\",\"telefono\":\"3511234567\",\"preferenciaContacto\":\"EMAIL\"}",
+          "mode": "raw"
+        },
+        "url": "http://localhost:8081/api/users/clientes"
+      },
+      "name": "Registrar cliente - acceso directo bloqueado",
+      "event": [
+        {
+          "script": {
+            "exec": [
+              "pm.test('HTTP 403', function () { pm.response.to.have.status(403); });"
+            ],
+            "type": "text/javascript"
+          },
+          "listen": "test"
+        }
+      ]
+    }
+  ],
+  "info": {
+    "description": "Ejemplos del contrato OpenAPI generado en http://localhost:8080/docs/users. Obtener token con Authorization Code + PKCE segun docs/registrar-cliente.md y asignarlo a access_token. Ejecutar en orden con una cuenta sin perfil. Para repetir usar otra cuenta o esperar 409. No exportar tokens reales.",
+    "name": "US-01 - Registrar cliente",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  }
+}

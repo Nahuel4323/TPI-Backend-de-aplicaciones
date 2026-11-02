@@ -113,6 +113,13 @@ El `.env` del gateway ya incluye las direcciones locales de los tres servicios y
 necesita credenciales PostgreSQL. Si se cambia `APP_DB_PORT`, actualizar también
 el puerto de las tres `DB_URL`.
 
+Completar ademas `GATEWAY_INTERNAL_TOKEN` con la misma clave aleatoria larga en
+`msvc-gateway/.env` y `msvc-users/.env`. Protege el canal interno: no es la contrasena
+de un usuario y no debe enviarse desde Postman. Los demas servicios no la necesitan
+para su estado actual. Para aplicar la configuracion a un Keycloak ya existente,
+instalar [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows)
+y ejecutar `pwsh -File infra/keycloak/configurar-registro.ps1` despues de iniciar Docker.
+
 ## 5. Levantar la infraestructura
 
 Desde la raíz, con Docker Desktop abierto:
@@ -161,8 +168,10 @@ Seleccionar el realm `complejos-deportivos` y comprobar los roles `CLIENTE` y `A
 El administrador inicial pertenece a `master`; no es un usuario cliente del sistema.
 Cada integrante tiene sus propios datos locales y recibe el mismo realm inicial.
 Los cambios posteriores en la consola no se sincronizan entre computadoras, y la
-importación al inicio omite un realm existente. Los clientes OAuth2 y el login del
-sistema todavía están pendientes de integración.
+importación al inicio omite un realm existente. El registro publico otorga CLIENTE;
+`postman-local` permite registrarse e iniciar sesion con Authorization Code + PKCE.
+Seguir [Registrar cliente](docs/registrar-cliente.md) para obtener el token y completar
+el perfil pasando por el gateway. El correo y la contrasena permanecen en Keycloak.
 
 ## 7. Ejecutar los microservicios
 
@@ -187,8 +196,8 @@ carpeta de trabajo, su `.env` y `-Duser.timezone=UTC`. Conservar esos valores pa
 evitar errores de conexión y zona horaria. Si Dashboard no usa la configuración,
 seleccionarla en **Ejecutar y depurar** y ejecutarla desde allí.
 
-Para el gateway, usar por ahora la alternativa Maven siguiente: todavía no tiene
-una configuración específica en el `launch.json` compartido.
+El gateway tambien tiene una configuracion en el `launch.json` compartido y puede
+iniciarse desde Dashboard.
 
 ### Alternativa: terminal y Maven Wrapper
 
@@ -220,10 +229,11 @@ Con los servicios de negocio iniciados, abrir:
 La respuesta esperada es `{"status":"UP"}`. Revisar también en los logs que la URL
 JDBC corresponda a `localhost:5433` y a la base de cada servicio.
 
-El gateway mantiene Spring Security activo. Una respuesta de autenticación al acceder
-por el puerto 8080 no demuestra que esté fallando PostgreSQL. El login con Keycloak
-y las reglas de acceso están pendientes. Tampoco hay endpoints de negocio hasta que
-se implementen sus controladores; un 404 en la raíz de un servicio puede ser normal.
+El gateway valida los tokens de Keycloak. `POST /api/users/clientes` requiere rol
+CLIENTE sin ADMIN y permite completar el perfil. Otras rutas quedan denegadas hasta
+implementar su politica. El POST directo al puerto 8081 devuelve 403: el registro
+debe pasar por el gateway en el puerto 8080. Un 404 en la raiz puede ser normal;
+no indica un fallo de PostgreSQL.
 
 ## 9. Detener y volver a trabajar
 
@@ -259,3 +269,7 @@ y las configuraciones de conexión correspondientes.
 Antes de un commit, revisar `git status`: compartir `.env.example`, nunca `.env`
 con credenciales. No hace falta un `pom.xml` raíz: cada servicio se ejecuta desde
 su carpeta. Las reglas de ramas y revisión están en el [README](README.md).
+
+## Documentacion interactiva
+
+Iniciar gateway y msvc-users y abrir http://localhost:8080/swagger-ui.html. Seleccionar Users. Para probar operaciones, pulsar Authorize y pegar el access token obtenido desde Keycloak/Postman, sin el prefijo Bearer. Ver docs/registrar-cliente.md para el registro y el inicio de sesion. Los contratos de Spaces y Bookings se incorporaran cuando se implementen.
