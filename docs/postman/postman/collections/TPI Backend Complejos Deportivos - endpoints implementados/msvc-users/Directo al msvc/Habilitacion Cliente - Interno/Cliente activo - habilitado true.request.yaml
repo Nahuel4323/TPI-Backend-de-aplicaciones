@@ -1,0 +1,6 @@
+$kind: http-request
+method: GET
+url: "{{users_url}}/api/users/clientes/{{cliente_activo_id}}/habilitacion"
+auth:
+  type: noauth
+order: 2000

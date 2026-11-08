@@ -83,7 +83,7 @@ backend-complejos-deportivos/
 │           └── 01-create-databases.sh
 ├── docs/
 │   ├── postman/
-│   │   └── registrar-cliente.postman_collection.json
+│   │   └── tpi-endpoints-implementados.postman_collection.json
 │   ├── registrar-cliente.md
 │   └── img/
 │       ├── arquitectura-general.png
@@ -131,7 +131,7 @@ PostgreSQL se publica en `localhost:5433` y la consola de Keycloak en [localhost
 .\mvnw.cmd spring-boot:run "-Dspring-boot.run.jvmArguments=-Duser.timezone=UTC"
 ```
 
-Como alternativa, instalar Spring Boot Extension Pack y usar Spring Boot Dashboard en VS Code. El archivo `.vscode/launch.json` configura los cuatro servicios con su propia carpeta de trabajo, su `.env` y `-Duser.timezone=UTC`. Abrir el repositorio completo como carpeta raíz. Users y gateway necesitan el mismo `GATEWAY_INTERNAL_TOKEN` en sus `.env` para el canal interno.
+Como alternativa, instalar Spring Boot Extension Pack y usar Spring Boot Dashboard en VS Code. El archivo `.vscode/launch.json` configura los cuatro servicios con su propia carpeta de trabajo, su `.env` y `-Duser.timezone=UTC`. Abrir el repositorio completo como carpeta raíz. La autenticación y los permisos por rol se centralizan en el Gateway; users no requiere una clave interna compartida.
 
 La carga se configura mediante `spring.config.import=optional:file:./.env[.properties]`. El archivo se interpreta como Java properties: usar `CLAVE=valor`, sin `export` ni comillas alrededor de los valores. Para valores que contengan barras invertidas, escaparlas como `\\`. Cada servicio puede usar credenciales diferentes. Las variables de entorno de la terminal tienen prioridad sobre el `.env`. En el IDE, establecer la carpeta de cada servicio como directorio de trabajo.
 
@@ -139,7 +139,7 @@ La variable opcional `DB_URL` permite reemplazar la URL JDBC completa de cada se
 
 El gateway reenvía `/api/users/**`, `/api/spaces/**` y `/api/bookings/**` conservando la ruta completa. Sus destinos se pueden cambiar con `USERS_SERVICE_URL`, `SPACES_SERVICE_URL` y `BOOKINGS_SERVICE_URL`. Si cambia el puerto de un servicio, también debe cambiarse su destino en el gateway.
 
-Keycloak permite registrarse con correo unico y rol CLIENTE. El gateway valida JWT y permite `POST /api/users/clientes` a cuentas CLIENTE sin ADMIN. Users completa el perfil local con la identidad validada; correo y contrasena permanecen en Keycloak. El acceso directo al endpoint de users esta protegido por una clave interna y ambas aplicaciones escuchan solo en loopback. Otras operaciones del gateway quedan denegadas hasta definir su politica. Ver la [guia completa de Registrar cliente](docs/registrar-cliente.md), el [contrato OpenAPI](http://localhost:8080/docs/users) y la [coleccion Postman](docs/postman/registrar-cliente.postman_collection.json).
+`POST /api/users/clientes` es público: recibe email, password y datos personales, crea una cuenta CLIENTE en Keycloak y guarda el perfil vinculado en users. Antes de iniciar users, ejecutar `pwsh -File infra/keycloak/configurar-users-registration.ps1` para configurar su cuenta de servicio y guardar el secreto en su `.env` local. La contraseña no se persiste en users ni se devuelve. El Gateway valida JWT y roles para las operaciones protegidas; el registro no requiere token. Ambas aplicaciones escuchan en loopback. Ver la [guia completa de Registrar cliente](docs/registrar-cliente.md), el [contrato OpenAPI](http://localhost:8080/docs/users) y la [coleccion Postman](docs/postman/tpi-endpoints-implementados.postman_collection.json).
 
 ## Metodología de trabajo
 
@@ -210,7 +210,7 @@ Se crearon los tres microservicios de negocio, el gateway y la biblioteca compar
 
 Se comprobó el arranque de los contenedores y la conexión de los servicios de negocio en el entorno del equipo. La configuración de VS Code permite ejecutar users, spaces y bookings con sus credenciales y zona horaria UTC.
 
-Registrar cliente cuenta con entidades, repositorios, DTO, mapper, servicio transaccional, controlador, manejo de errores y pruebas. La cuenta se crea en la pantalla de Keycloak con Authorization Code + PKCE y el perfil se completa desde Postman por el gateway. Si falla el perfil, se puede reintentar sin eliminar la cuenta de Keycloak. Quedan pendientes las demas US, el alta controlada de administradores y la integracion de la biblioteca compartida cuando haya codigo comun. Los roles de acceso son `CLIENTE` y `ADMIN`; el discriminador JPA `ADMINISTRADOR` identifica el subtipo local, no un rol adicional de Keycloak.
+Registrar cliente incluye alta pública de cuenta en Keycloak y perfil local, validaciones, control de duplicados y eliminación compensatoria de la cuenta nueva si falla el perfil. [Registrar administrador](docs/registrar-administrador.md) permite crear cuenta ADMIN y perfil administrativo, con permisos en el Gateway y bootstrap inicial explícito e idempotente; la asignación a complejo pertenece a US-07. Un fallo de compensación o cierre abrupto requiere reconciliación según las guías. El login posterior mantiene Authorization Code + PKCE. Quedan pendientes las demás US y la integración de la biblioteca compartida cuando haya código común. Los roles de acceso son `CLIENTE` y `ADMIN`; el discriminador JPA `ADMINISTRADOR` identifica el subtipo local, no un rol adicional de Keycloak.
 
 ## Organización
 
@@ -222,4 +222,4 @@ Registrar cliente cuenta con entidades, repositorios, DTO, mapper, servicio tran
 
 **Proyecto:** Trabajo Práctico Integrador
 
-Documentacion interactiva central: [Swagger UI](http://localhost:8080/swagger-ui.html). Iniciar gateway y users. Seleccionar Users y usar Authorize con un access token obtenido en Keycloak/Postman para ejecutar las operaciones. Spaces y Bookings se agregaran cuando publiquen sus contratos.
+Documentación interactiva central: [Swagger UI](http://localhost:8080/swagger-ui.html). Iniciar gateway y users. Seleccionar Users; Registrar cliente se ejecuta sin Authorize. Para operaciones protegidas, usar un access token obtenido en Keycloak/Postman. Spaces y Bookings se agregarán cuando publiquen sus contratos.

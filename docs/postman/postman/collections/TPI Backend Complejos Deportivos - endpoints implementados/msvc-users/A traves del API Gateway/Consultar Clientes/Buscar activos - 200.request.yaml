@@ -1,0 +1,71 @@
+$kind: http-request
+method: GET
+url: "{{gateway_url}}/api/users/clientes?activo=true"
+queryParams:
+  - key: activo
+    value: "true"
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: "{{admin_access_token}}"
+scripts:
+  - type: beforeRequest
+    language: text/javascript
+    code: |-
+      // Postman > Scripts > Pre-request. Authorization: Bearer {{admin_access_token}}.
+      // Credenciales del administrador de negocio en el entorno local, nunca en este archivo.
+      (function autenticarAdmin() {
+          const baseUrl = String(pm.variables.get("keycloak_url") || "http://localhost:8180").replace(/\/$/, "");
+          const realm = pm.variables.get("keycloak_realm") || "complejos-deportivos";
+          const clientId = pm.variables.get("keycloak_auto_client_id") || "postman-auto";
+          const username = pm.environment.get("admin_login_email");
+          const password = pm.environment.get("admin_login_password");
+      
+          function detener(message) {
+              // No reutilizar un token anterior si falla esta autenticación.
+              pm.variables.set("admin_access_token", "");
+              // skipRequest puede terminar el script: informar el motivo ANTES de cancelar.
+              console.error("[Auth ADMIN] " + message);
+              pm.execution.skipRequest();
+              throw new Error(message);
+          }
+      
+          pm.variables.set("admin_access_token", "");
+          if (!username || !password) {
+              detener("Seleccioná el entorno y completá admin_login_email y admin_login_password con valores locales.");
+          }
+      
+          console.info("[Auth ADMIN] Solicitando token a Keycloak...");
+          pm.sendRequest({
+              url: `${baseUrl}/realms/${encodeURIComponent(realm)}/protocol/openid-connect/token`,
+              method: "POST",
+              header: { "Content-Type": "application/x-www-form-urlencoded" },
+              body: {
+                  mode: "urlencoded",
+                  urlencoded: [
+                      { key: "grant_type", value: "password" },
+                      { key: "client_id", value: clientId },
+                      { key: "username", value: username },
+                      { key: "password", value: password },
+                      { key: "scope", value: "openid profile email" }
+                  ]
+              }
+          }, function (error, response) {
+              if (error) detener("No se pudo conectar con Keycloak. Revisá keycloak_url y que esté iniciado.");
+              if (response.code !== 200) {
+                  detener(`Keycloak devolvió HTTP ${response.code}. Revisá las credenciales, el estado de la cuenta y el cliente postman-auto.`);
+              }
+              let data;
+              try { data = response.json(); }
+              catch (_) { detener("Keycloak no devolvió una respuesta JSON válida."); }
+              if (!data || typeof data.access_token !== "string" || !data.access_token.trim()) {
+                  detener("Keycloak no devolvió un access token válido.");
+              }
+              // Valor temporal: se utiliza en esta petición, sin guardar tokens en el entorno exportable.
+              pm.variables.set("admin_access_token", data.access_token);
+              console.info("[Auth ADMIN] Login correcto; enviando la petición al backend.");
+          });
+      }());
+      
+order: 3000

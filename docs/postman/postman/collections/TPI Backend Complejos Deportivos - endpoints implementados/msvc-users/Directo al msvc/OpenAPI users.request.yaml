@@ -1,0 +1,10 @@
+$kind: http-request
+url: "{{users_url}}/v3/api-docs"
+method: GET
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: pm.test('HTTP 200',()=>pm.response.to.have.status(200));
+    language: text/javascript
+order: 2000

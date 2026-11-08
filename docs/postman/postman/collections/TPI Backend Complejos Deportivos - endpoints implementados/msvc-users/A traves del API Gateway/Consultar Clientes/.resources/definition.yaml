@@ -1,0 +1,15 @@
+$kind: collection
+name: "Consultar Clientes"
+order: 15000
+description: "Usar UUID local del cliente. nombre busca nombre/apellido; activo=true o false; se devuelve una lista completa sin paginado. Casos ADMIN usan admin_login_* y casos CLIENTE usan cliente_login_* o login_*. Solo peticiones manuales, sin aserciones automáticas."
+variables:
+  - key: cliente_id
+    value: ""
+  - key: cliente_activo_id
+    value: ""
+  - key: cliente_inactivo_id
+    value: ""
+  - key: cliente_inexistente_id
+    value: "a9a8203a-18b9-424b-80a2-d13e3e273806"
+  - key: cliente_busqueda_nombre
+    value: "Ana"

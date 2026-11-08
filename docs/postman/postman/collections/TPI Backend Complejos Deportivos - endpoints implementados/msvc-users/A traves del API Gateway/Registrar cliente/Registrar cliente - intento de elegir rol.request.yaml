@@ -1,0 +1,13 @@
+$kind: http-request
+url: "{{gateway_url}}/api/users/clientes"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: '{"nombre":"Ana","apellido":"Perez","rol":"ADMIN"}'
+scripts:
+  - type: afterResponse
+    code: pm.test('HTTP 400', function () { pm.response.to.have.status(400); });
+    language: text/javascript
+order: 6000

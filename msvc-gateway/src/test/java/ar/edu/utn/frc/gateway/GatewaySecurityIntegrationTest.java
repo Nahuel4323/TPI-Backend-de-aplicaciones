@@ -29,7 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /** Prueba HTTP del gateway. El decoder de este test no verifica criptografia; se prueba aparte con Keycloak real. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
-        "app.gateway.internal-token=test-only-internal-token", "spring.config.import="})
+        "spring.config.import="})
 @Import(GatewaySecurityIntegrationTest.Tokens.class)
 class GatewaySecurityIntegrationTest {
 
@@ -46,9 +46,32 @@ class GatewaySecurityIntegrationTest {
                 exchange.getResponseBody().write(body);
                 exchange.close();
             });
+            UPSTREAM.createContext("/api/users/administradores", exchange -> {
+                HEADERS.set(exchange.getRequestHeaders());
+                byte[] body = "{\"id\":\"admin-prueba\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(201, body.length);
+                exchange.getResponseBody().write(body);
+                exchange.close();
+            });
+            UPSTREAM.createContext("/api/users/me", exchange -> {
+                HEADERS.set(exchange.getRequestHeaders());
+                byte[] body = "{\"nombre\":\"Perfil propio\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, body.length);
+                exchange.getResponseBody().write(body);
+                exchange.close();
+            });
             UPSTREAM.createContext("/v3/api-docs", exchange -> {
                 byte[] body = "{\"openapi\":\"3.1.0\"}".getBytes(java.nio.charset.StandardCharsets.UTF_8);
                 exchange.getResponseHeaders().set("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, body.length);
+                exchange.getResponseBody().write(body);
+                exchange.close();
+            });
+            UPSTREAM.createContext("/api/spaces/deportes", exchange -> {
+                HEADERS.set(exchange.getRequestHeaders());
+                byte[] body = "[]".getBytes(java.nio.charset.StandardCharsets.UTF_8);
                 exchange.sendResponseHeaders(200, body.length);
                 exchange.getResponseBody().write(body);
                 exchange.close();
@@ -64,6 +87,10 @@ class GatewaySecurityIntegrationTest {
 
     @DynamicPropertySource
     static void routes(DynamicPropertyRegistry registry) {
+        registry.add("spring.cloud.gateway.server.webflux.routes[2].id", () -> "spaces-test");
+        registry.add("spring.cloud.gateway.server.webflux.routes[2].predicates[0]", () -> "Path=/api/spaces/**");
+        registry.add("spring.cloud.gateway.server.webflux.routes[2].uri",
+                () -> "http://127.0.0.1:" + UPSTREAM.getAddress().getPort());
         registry.add("spring.cloud.gateway.server.webflux.routes[1].id", () -> "users-openapi");
         registry.add("spring.cloud.gateway.server.webflux.routes[1].predicates[0]", () -> "Path=/docs/users");
         registry.add("spring.cloud.gateway.server.webflux.routes[1].predicates[1]", () -> "Method=GET");
@@ -80,7 +107,11 @@ class GatewaySecurityIntegrationTest {
     static void stop() { UPSTREAM.stop(0); }
 
     private HttpResponse<String> registrar(String token) throws Exception {
-        var builder = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/users/clientes"))
+        return registrarEn("/api/users/clientes", token);
+    }
+
+    private HttpResponse<String> registrarEn(String path, String token) throws Exception {
+        var builder = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + path))
                 .header("Content-Type", "application/json")
                 .header("X-User-Id", "identidad-inventada")
                 .header("X-User-Email", "correo-inventado")
@@ -89,6 +120,53 @@ class GatewaySecurityIntegrationTest {
                 .POST(HttpRequest.BodyPublishers.ofString("{}"));
         if (token != null) builder.header("Authorization", "Bearer " + token);
         return client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+    }
+
+    @Test
+    void patchPropioExigeTokenYReemplazaIdentidadDelConsumidor() throws Exception {
+        for (String token : List.of("", "invalido", "cliente", "admin")) {
+            var builder = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/users/me"))
+                    .header("Content-Type", "application/json").header("X-User-Id", "victima")
+                    .method("PATCH", HttpRequest.BodyPublishers.ofString("{\"nombre\":\"Perfil propio\"}"));
+            if (!token.isEmpty()) builder.header("Authorization", "Bearer " + token);
+            var response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            assertThat(response.statusCode()).isEqualTo(token.isEmpty() || token.equals("invalido") ? 401 : 200);
+            if (response.statusCode() == 200) {
+                assertThat(HEADERS.get().getFirst("X-User-Id")).isEqualTo("identidad-real");
+                assertThat(HEADERS.get().getFirst("Authorization")).isNull();
+            }
+        }
+    }
+
+    @Test
+    void altaAdministradorExigeAdminEnGateway() throws Exception {
+        assertThat(registrarEn("/api/users/administradores", null).statusCode()).isEqualTo(401);
+        assertThat(registrarEn("/api/users/administradores", "invalido").statusCode()).isEqualTo(401);
+        assertThat(registrarEn("/api/users/administradores", "cliente").statusCode()).isEqualTo(403);
+        assertThat(registrarEn("/api/users/administradores", "sinroles").statusCode()).isEqualTo(403);
+        assertThat(registrarEn("/api/users/administradores", "admin").statusCode()).isEqualTo(201);
+        assertThat(HEADERS.get().getFirst("X-User-Id")).isEqualTo("identidad-real");
+        assertThat(HEADERS.get().getFirst("X-User-Roles")).isNull();
+        assertThat(registrarEn("/api/users/administradores/", "admin").statusCode()).isEqualTo(201);
+    }
+
+    @Test
+    void permiteCatalogoPublicoPeroProtegePerfilYOperacionesInternas() throws Exception {
+        var catalogo = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/spaces/deportes"))
+                .header("X-User-Id", "inventado")
+                .header("X-Gateway-Token", "inventado").GET().build();
+        assertThat(client.send(catalogo, HttpResponse.BodyHandlers.ofString()).statusCode()).isEqualTo(200);
+        assertThat(HEADERS.get().getFirst("X-User-Id")).isNull();
+        assertThat(HEADERS.get().getFirst("X-Gateway-Token")).isNull();
+
+        var perfil = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/users/me"))
+                .GET().build();
+        assertThat(client.send(perfil, HttpResponse.BodyHandlers.ofString()).statusCode()).isEqualTo(401);
+
+        var interna = HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/spaces/ocupaciones/retenciones"))
+                .header("Authorization", "Bearer admin")
+                .POST(HttpRequest.BodyPublishers.ofString("{}")).build();
+        assertThat(client.send(interna, HttpResponse.BodyHandlers.ofString()).statusCode()).isEqualTo(403);
     }
 
     @Test
@@ -101,15 +179,25 @@ class GatewaySecurityIntegrationTest {
     }
 
     @Test
-    void exigeToken() throws Exception {
-        assertThat(registrar(null).statusCode()).isEqualTo(401);
+    void registroPublicoLimpiaEncabezadosSinToken() throws Exception {
+        assertThat(registrar(null).statusCode()).isEqualTo(201);
+        var headers = HEADERS.get();
+        assertThat(headers.getFirst("X-User-Id")).isNull();
+        assertThat(headers.getFirst("X-User-Email")).isNull();
+        assertThat(headers.getFirst("X-User-Roles")).isNull();
+        assertThat(headers.getFirst("X-Gateway-Token")).isNull();
+        assertThat(headers.getFirst("Authorization")).isNull();
+    }
+
+    @Test
+    void rechazaTokenInvalidoInclusoEnRegistroPublico() throws Exception {
         assertThat(registrar("invalido").statusCode()).isEqualTo(401);
     }
 
     @Test
-    void exigeClienteYRechazaAdministradorInclusoConAmbosRoles() throws Exception {
+    void registroPublicoNoExigeRol() throws Exception {
         for (String token : List.of("admin", "doble", "sinroles")) {
-            assertThat(registrar(token).statusCode()).isEqualTo(403);
+            assertThat(registrar(token).statusCode()).isEqualTo(201);
         }
     }
 
@@ -119,7 +207,7 @@ class GatewaySecurityIntegrationTest {
         var headers = HEADERS.get();
         assertThat(headers.getFirst("X-User-Id")).isEqualTo("identidad-real");
         assertThat(headers.getFirst("X-User-Email")).isEqualTo("YW5hQGV4YW1wbGUuY29t");
-        assertThat(headers.getFirst("X-Gateway-Token")).isEqualTo("test-only-internal-token");
+        assertThat(headers.getFirst("X-Gateway-Token")).isNull();
         assertThat(headers.getFirst("X-User-Roles")).isNull();
         assertThat(headers.getFirst("Authorization")).isNull();
     }

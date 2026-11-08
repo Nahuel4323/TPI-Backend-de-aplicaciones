@@ -1,0 +1,6 @@
+$kind: http-request
+url: '{{gateway_url}}/api/users/me'
+method: GET
+auth:
+  type: noauth
+order: 2000

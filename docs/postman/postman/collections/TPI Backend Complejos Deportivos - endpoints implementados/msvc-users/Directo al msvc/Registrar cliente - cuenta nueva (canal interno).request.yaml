@@ -1,0 +1,25 @@
+$kind: http-request
+url: "{{users_url}}/api/users/clientes"
+method: POST
+headers:
+  X-Gateway-Token: "{{gateway_internal_token}}"
+  X-User-Id: "{{direct_user_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nombre": "Ana",
+      "apellido": "Perez",
+      "telefono": "3511234567",
+      "preferenciaContacto": "TELEFONO"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test('HTTP 201',()=>pm.response.to.have.status(201));
+      pm.test('Perfil sin credenciales', function () { const data = pm.response.json(); pm.expect(data).to.have.property('id'); pm.expect(data).not.to.have.property('password'); pm.expect(data).not.to.have.property('keycloakId'); pm.expect(data).not.to.have.property('email'); });
+    language: text/javascript
+order: 9000

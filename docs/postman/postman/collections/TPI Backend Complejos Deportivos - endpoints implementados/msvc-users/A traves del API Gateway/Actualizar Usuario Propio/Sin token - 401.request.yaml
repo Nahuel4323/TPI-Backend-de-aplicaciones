@@ -1,0 +1,13 @@
+$kind: http-request
+url: '{{gateway_url}}/api/users/me'
+method: PATCH
+auth:
+  type: noauth
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {"nombre":"Nuevo"}
+order: 4000

@@ -1,0 +1,23 @@
+$kind: collection
+description: "Registro público crea cuenta Keycloak y perfil sin JWT. Configurar registration_email, direct_registration_email y public_registration_email distintos y nuevos; registration_password debe cumplir la política. Ejecutar altas antes de sus duplicados. Variables privadas vacías; no guardar tokens ni contraseñas en Git. US-05: alta administrativa protegida por ADMIN; variables administrativas locales vacías. Ver docs/registrar-administrador.md."
+variables:
+  gateway_url: http://localhost:8080
+  users_url: http://localhost:8081
+  spaces_url: http://localhost:8082
+  bookings_url: http://localhost:8083
+  access_token: ""
+  gateway_internal_token: ""
+  direct_user_id: ""
+  registration_email: ""
+  direct_registration_email: ""
+  public_registration_email: ""
+  registration_password: ""
+  admin_access_token: ""
+  admin_registration_email: ""
+  admin_registration_password: ""
+auth:
+  - id: 807cf5b3-03b4-4618-a557-09877889e6f7
+    type: bearer
+    name: bearer auth
+    credentials:
+      token: "{{access_token}}"

@@ -1,0 +1,42 @@
+name: TPI Local - Pruebas
+values:
+  - key: gateway_url
+    value: 'http://localhost:8080'
+  - key: users_url
+    value: 'http://localhost:8081'
+  - key: spaces_url
+    value: 'http://localhost:8082'
+  - key: bookings_url
+    value: 'http://localhost:8083'
+  - key: access_token
+    value: ''
+  - key: gateway_internal_token
+    value: ''
+  - key: direct_user_id
+    value: ''
+  - key: admin_access_token
+    value: ''
+  - key: admin_registration_email
+    value: ''
+  - key: admin_registration_password
+    value: ''
+  - key: keycloak_url
+    value: 'http://localhost:8180'
+  - key: keycloak_realm
+    value: complejos-deportivos
+  - key: keycloak_auto_client_id
+    value: postman-auto
+  - key: admin_login_email
+    value: ''
+  - key: admin_login_password
+    value: ''
+  - key: cliente_login_email
+    value: ''
+  - key: cliente_login_password
+    value: ''
+  - key: cliente_busqueda_nombre
+    value: ''
+  - key: cliente_id
+    value: ''
+  - key: cliente_inexistente_id
+    value: ''

@@ -1,0 +1,132 @@
+$kind: http-request
+url: "{{gateway_url}}/api/users/me"
+method: GET
+scripts:
+  - type: beforeRequest
+    code: "const keycloakUrl = pm.variables.get(\"keycloak_url\")\r
+
+      \    || \"http://localhost:8180\";\r
+
+      \r
+
+      const realm = pm.variables.get(\"keycloak_realm\")\r
+
+      \    || \"complejos-deportivos\";\r
+
+      \r
+
+      const email = pm.environment.get(\"cliente_login_email\");\r
+
+      const password = pm.environment.get(\"cliente_login_password\");\r
+
+      \r
+
+      function detener(mensaje) {\r
+
+      \    console.error(mensaje);\r
+
+      \    pm.variables.set(\"access_token\", \"\");\r
+
+      \    pm.execution.skipRequest();\r
+
+      \    throw new Error(mensaje);\r
+
+      }\r
+
+      \r
+
+      pm.variables.set(\"access_token\", \"\");\r
+
+      \r
+
+      if (!email || !password) {\r
+
+      \    detener(\"Seleccioná el entorno y completá login_email y login_password.\");\r
+
+      }\r
+
+      \r
+
+      pm.sendRequest({\r
+
+      \    url: `${keycloakUrl.replace(/\\/$/, \"\")}/realms/${encodeURIComponent(realm)}/protocol/openid-connect/token`,\r
+
+      \    method: \"POST\",\r
+
+      \    header: {\r
+
+      \        \"Content-Type\": \"application/x-www-form-urlencoded\"\r
+
+      \    },\r
+
+      \    body: {\r
+
+      \        mode: \"urlencoded\",\r
+
+      \        urlencoded: [\r
+
+      \            { key: \"grant_type\", value: \"password\" },\r
+
+      \            { key: \"client_id\", value: \"postman-auto\" },\r
+
+      \            { key: \"username\", value: email },\r
+
+      \            { key: \"password\", value: password },\r
+
+      \            { key: \"scope\", value: \"openid profile email\" }\r
+
+      \        ]\r
+
+      \    }\r
+
+      }, (error, response) => {\r
+
+      \    if (error) {\r
+
+      \        detener(\"No se pudo conectar con Keycloak.\");\r
+
+      \    }\r
+
+      \r
+
+      \    if (response.code !== 200) {\r
+
+      \        detener(`Login rechazado por Keycloak: HTTP ${response.code}.`);\r
+
+      \    }\r
+
+      \r
+
+      \    let datos;\r
+
+      \r
+
+      \    try {\r
+
+      \        datos = response.json();\r
+
+      \    } catch (_) {\r
+
+      \        detener(\"Keycloak no devolvió JSON válido.\");\r
+
+      \    }\r
+
+      \r
+
+      \    if (!datos || typeof datos.access_token !== \"string\"\r
+
+      \            || !datos.access_token.trim()) {\r
+
+      \        detener(\"Keycloak no devolvió un token válido.\");\r
+
+      \    }\r
+
+      \r
+
+      \    pm.variables.set(\"access_token\", datos.access_token);\r
+
+      \    console.info(\"Login correcto. Enviando petición.\");\r
+
+      });"
+    language: text/javascript
+order: 1000

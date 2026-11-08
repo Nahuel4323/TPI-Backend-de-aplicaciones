@@ -113,12 +113,16 @@ El `.env` del gateway ya incluye las direcciones locales de los tres servicios y
 necesita credenciales PostgreSQL. Si se cambia `APP_DB_PORT`, actualizar también
 el puerto de las tres `DB_URL`.
 
-Completar ademas `GATEWAY_INTERNAL_TOKEN` con la misma clave aleatoria larga en
-`msvc-gateway/.env` y `msvc-users/.env`. Protege el canal interno: no es la contrasena
-de un usuario y no debe enviarse desde Postman. Los demas servicios no la necesitan
-para su estado actual. Para aplicar la configuracion a un Keycloak ya existente,
+No se requiere una clave interna compartida: la autenticación y los roles se
+centralizan en el Gateway. Users escucha en loopback y las llamadas directas no
+pasan por los controles del Gateway. Para aplicar la configuración a un Keycloak ya existente,
 instalar [PowerShell 7](https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-windows)
 y ejecutar `pwsh -File infra/keycloak/configurar-registro.ps1` despues de iniciar Docker.
+
+Para el registro público de cuenta y perfil, ejecutar también
+`pwsh -File infra/keycloak/configurar-users-registration.ps1`. Crea la cuenta de
+servicio y completa `KEYCLOAK_REGISTRATION_CLIENT_SECRET` en `msvc-users/.env` sin
+imprimirlo. Reiniciar users si ya estaba iniciado.
 
 ## 5. Levantar la infraestructura
 
@@ -170,10 +174,15 @@ Cada integrante tiene sus propios datos locales y recibe el mismo realm inicial.
 Los cambios posteriores en la consola no se sincronizan entre computadoras, y la
 importación al inicio omite un realm existente. El registro publico otorga CLIENTE;
 `postman-local` permite registrarse e iniciar sesion con Authorization Code + PKCE.
-Seguir [Registrar cliente](docs/registrar-cliente.md) para obtener el token y completar
-el perfil pasando por el gateway. El correo y la contrasena permanecen en Keycloak.
+Seguir [Registrar cliente](docs/registrar-cliente.md) para crear cuenta y perfil por
+el endpoint público del Gateway, sin JWT previo. Users envía la contraseña a Keycloak
+y no la guarda. El login posterior usa Authorization Code + PKCE.
 
 ## 7. Ejecutar los microservicios
+
+El alta de administradores requiere un token ADMIN por el Gateway. Para inicializar
+al primero mediante un arranque controlado, seguir [Registrar administrador](docs/registrar-administrador.md).
+El administrador de la consola master de Keycloak no reemplaza al administrador de negocio.
 
 | Aplicación | Puerto |
 | --- | --- |
@@ -229,11 +238,11 @@ Con los servicios de negocio iniciados, abrir:
 La respuesta esperada es `{"status":"UP"}`. Revisar también en los logs que la URL
 JDBC corresponda a `localhost:5433` y a la base de cada servicio.
 
-El gateway valida los tokens de Keycloak. `POST /api/users/clientes` requiere rol
-CLIENTE sin ADMIN y permite completar el perfil. Otras rutas quedan denegadas hasta
-implementar su politica. El POST directo al puerto 8081 devuelve 403: el registro
-debe pasar por el gateway en el puerto 8080. Un 404 en la raiz puede ser normal;
-no indica un fallo de PostgreSQL.
+El Gateway valida los tokens de Keycloak en rutas protegidas. `POST /api/users/clientes`
+es público y crea cuenta CLIENTE y perfil; usar No Auth y enviar email, password y
+datos personales. Users no tiene filtro interno de acceso y también acepta solicitudes
+locales directas, pero la entrada normal es el Gateway en 8080.
+Un 404 en la raíz puede ser normal; no indica un fallo de PostgreSQL.
 
 ## 9. Detener y volver a trabajar
 
@@ -272,4 +281,4 @@ su carpeta. Las reglas de ramas y revisión están en el [README](README.md).
 
 ## Documentacion interactiva
 
-Iniciar gateway y msvc-users y abrir http://localhost:8080/swagger-ui.html. Seleccionar Users. Para probar operaciones, pulsar Authorize y pegar el access token obtenido desde Keycloak/Postman, sin el prefijo Bearer. Ver docs/registrar-cliente.md para el registro y el inicio de sesion. Los contratos de Spaces y Bookings se incorporaran cuando se implementen.
+Iniciar gateway y msvc-users y abrir http://localhost:8080/swagger-ui.html. Seleccionar Users. Registrar cliente no requiere Authorize: enviar email, password y datos personales. Para operaciones protegidas, pulsar Authorize y pegar el access token obtenido desde Keycloak/Postman, sin el prefijo Bearer. Ver docs/registrar-cliente.md. Los contratos de Spaces y Bookings se incorporarán cuando se implementen.

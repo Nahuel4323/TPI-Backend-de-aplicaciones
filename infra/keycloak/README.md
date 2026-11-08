@@ -1,5 +1,16 @@
 # Keycloak local
 
+Para el login automático desde scripts de Postman en desarrollo local, ejecutar
+`pwsh -File infra/keycloak/configurar-postman-auto.ps1`. Configura un cliente separado
+`postman-auto` con Direct Access Grants; el cliente `postman-local` conserva PKCE.
+Ver [variables y script de Postman](../../docs/postman/README.md).
+
+Para el alta pública `POST /api/users/clientes`, ejecutar desde la raíz con PowerShell 7:
+`pwsh -File infra/keycloak/configurar-users-registration.ps1` después de levantar Keycloak.
+El script configura el cliente confidencial de servicio `users-registration` y escribe
+su secreto exclusivamente en `msvc-users/.env`. No necesita JWT del cliente para registrarse.
+Ver [registro público de cliente](../../docs/registrar-cliente.md).
+
 Requiere Docker Desktop iniciado con contenedores Linux y Docker Compose.
 Desde la raiz del repositorio:
 

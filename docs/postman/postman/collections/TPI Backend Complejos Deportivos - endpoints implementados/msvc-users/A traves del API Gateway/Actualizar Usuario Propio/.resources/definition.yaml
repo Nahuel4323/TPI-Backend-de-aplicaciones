@@ -1,0 +1,3 @@
+$kind: collection
+order: 14000
+description: Actualización parcial del perfil propio. Usar cuentas de prueba. Los casos indican el HTTP esperado y no contienen aserciones automáticas.

@@ -1,0 +1,6 @@
+$kind: http-request
+method: GET
+url: "{{gateway_url}}/api/users/clientes/{{cliente_id}}"
+auth:
+  type: noauth
+order: 15000

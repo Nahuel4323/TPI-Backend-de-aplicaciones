@@ -1,0 +1,3 @@
+$kind: collection
+description: Pruebas del registro público y documentación. Configurar variables locales; no exportar credenciales.
+order: 1000

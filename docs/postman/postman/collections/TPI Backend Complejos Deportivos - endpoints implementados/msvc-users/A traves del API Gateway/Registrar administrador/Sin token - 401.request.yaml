@@ -1,0 +1,29 @@
+$kind: http-request
+url: "{{gateway_url}}/api/users/administradores"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: "{\r
+
+    \  \"email\": \"{{admin_registration_email}}\",\r
+
+    \  \"password\": \"{{admin_registration_password}}\",\r
+
+    \  \"nombre\": \"Ana\",\r
+
+    \  \"apellido\": \"Perez\",\r
+
+    \  \"telefono\": \"3511234567\",\r
+
+    \  \"telefonoLaboral\": \"3517654321\"\r
+
+    }"
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: pm.test('HTTP 401',()=>pm.response.to.have.status(401));
+    language: text/javascript
+order: 1000

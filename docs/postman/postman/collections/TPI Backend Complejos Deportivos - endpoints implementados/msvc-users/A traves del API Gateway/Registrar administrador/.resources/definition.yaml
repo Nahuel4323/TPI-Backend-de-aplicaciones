@@ -1,0 +1,5 @@
+$kind: collection
+description: US-05. Requiere access token ADMIN del realm de negocio.
+  Inicializar al primero según docs/registrar-administrador.md. Asignación a
+  complejo en US-07. Ejecutar alta antes del duplicado.
+order: 906

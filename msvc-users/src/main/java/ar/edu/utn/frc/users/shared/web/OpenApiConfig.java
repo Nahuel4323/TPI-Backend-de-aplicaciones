@@ -13,8 +13,9 @@ public class OpenApiConfig {
     @Bean
     OpenAPI usersOpenApi() {
         return new OpenAPI().info(new Info().title("API Users").version("1.0.0")
-                .description("La cuenta se registra en Keycloak. Esta API completa el perfil de negocio. "
-                        + "Correo y contraseña permanecen en Keycloak. Las operaciones se ejecutan por el gateway."))
+                .description("Registro público de clientes y alta de administradores protegida por rol ADMIN en el Gateway. "
+                        + "Cada alta crea cuenta Keycloak y perfil de negocio. "
+                        + "La contraseña se envía a Keycloak, no se persiste en users ni se devuelve. Acceso por el gateway."))
                 .addServersItem(new Server().url("/").description("Gateway que sirve Swagger UI"))
                 .components(new Components().addSecuritySchemes("bearerAuth", new SecurityScheme()
                         .type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")));

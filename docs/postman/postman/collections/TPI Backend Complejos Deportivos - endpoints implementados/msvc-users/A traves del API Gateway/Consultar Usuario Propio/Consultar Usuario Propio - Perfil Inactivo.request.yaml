@@ -1,0 +1,9 @@
+$kind: http-request
+url: '{{gateway_url}}/api/users/me'
+method: GET
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{perfil_inactivo_access_token}}'
+order: 3000

@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{users_url}}/api/users/clientes"
+method: POST
+headers:
+  X-Gateway-Token: "{{gateway_internal_token}}"
+  X-User-Id: "{{direct_user_id}}"
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nombre": "Ana",
+      "apellido": "Perez",
+      "telefono": "",
+      "preferenciaContacto": "TELEFONO"
+    }
+auth:
+  type: noauth
+scripts:
+  - type: afterResponse
+    code: pm.test('HTTP 400',()=>pm.response.to.have.status(400));
+    language: text/javascript
+order: 6000

@@ -86,6 +86,37 @@
       "name": "Postman local - registro y pruebas",
       "serviceAccountsEnabled": false,
       "clientId": "postman-local"
+    },
+    {
+      "protocolMappers": [
+        {
+          "name": "backend-api-audience",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "access.token.claim": "true",
+            "included.custom.audience": "backend-api",
+            "id.token.claim": "false"
+          },
+          "protocol": "openid-connect",
+          "consentRequired": false
+        }
+      ],
+      "publicClient": true,
+      "clientId": "postman-auto",
+      "name": "Postman - login automatico de pruebas locales",
+      "standardFlowEnabled": false,
+      "protocol": "openid-connect",
+      "implicitFlowEnabled": false,
+      "defaultClientScopes": [
+        "basic",
+        "roles",
+        "profile",
+        "email"
+      ],
+      "enabled": true,
+      "fullScopeAllowed": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false
     }
   ]
 }

@@ -1,0 +1,15 @@
+$kind: collection
+name: "Habilitacion Cliente - Interno"
+order: 15000
+description: "Acceso interno directo a users. Cliente activo devuelve habilitado=true; inactivo false; inexistente 404. El Gateway bloquea habilitacion incluso con ADMIN. Completar cliente_activo_id y cliente_inactivo_id."
+variables:
+  - key: cliente_id
+    value: ""
+  - key: cliente_activo_id
+    value: ""
+  - key: cliente_inactivo_id
+    value: ""
+  - key: cliente_inexistente_id
+    value: "a9a8203a-18b9-424b-80a2-d13e3e273806"
+  - key: cliente_busqueda_nombre
+    value: "Ana"

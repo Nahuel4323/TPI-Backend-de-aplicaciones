@@ -1,0 +1,23 @@
+$kind: http-request
+url: "{{gateway_url}}/api/users/clientes"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: json
+  content: |-
+    {
+      "nombre": "Ana",
+      "apellido": "Perez",
+      "telefono": "3511234567",
+      "preferenciaContacto": "TELEFONO"
+    }
+auth:
+  type: bearer
+  credentials:
+    token: token-invalido
+scripts:
+  - type: afterResponse
+    code: pm.test('HTTP 401',()=>pm.response.to.have.status(401));
+    language: text/javascript
+order: 696
